@@ -117,10 +117,9 @@ function onClickItem(e) {
 
 function checkIfItemExists(item) {
   const itemsFromLocalStorage = JSON.parse(localStorage.getItem("items"));
-  return (
-    itemsFromLocalStorage.filter((i) => i.toLowerCase() === item.toLowerCase())
+  itemsFromLocalStorage === null ? false :
+  itemsFromLocalStorage.filter((i) => i.toLowerCase() === item.toLowerCase())
       .length !== 0
-  );
 }
 
 function setItemToEdit(item) {
