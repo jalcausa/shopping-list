@@ -4,6 +4,7 @@ const itemList = document.getElementById("item-list"); // <ul>
 const clearButton = document.getElementById("clear"); // <button>
 const itemFilter = document.getElementById("filter"); // <input>
 const formBtn = itemForm.querySelector("button"); // botón de add item
+const cancelBtn = document.getElementById("cancel-btn");
 let isEditMode = false; // Para editar un item al clickarlo
 
 function displayItems() {
@@ -24,6 +25,21 @@ function onAddItemSubmit(e) {
   // Validate Input
   if (newItem === "") {
     alert("Please add an item");
+    return;
+  }
+
+  // Eliminar el elemento antiguo al actualizarlo
+  if (isEditMode) {
+    const itemToEdit = itemList.querySelector(".edit-mode");
+
+    removeItemFromStorage(itemToEdit.textContent);
+    itemToEdit.classList.remove("edit-mode");
+    itemToEdit.remove();
+    isEditMode = false;
+  }
+  // Comprobar que el elemento que vamos a añadir no esté ya en la lista
+  if (checkIfItemExists(newItem)) {
+    alert("That item alredy exists!");
     return;
   }
 
@@ -92,43 +108,56 @@ function onClickItem(e) {
   if (e.target.parentElement.classList.contains("remove-item")) {
     removeItem(e.target.parentElement.parentElement);
   } else {
-	setItemToEdit(e.target);
+    if (e.target.tagName === "LI") {
+      cancelBtn.classList.remove("hidden");
+      setItemToEdit(e.target);
+    }
   }
 }
 
+function checkIfItemExists(item) {
+  const itemsFromLocalStorage = JSON.parse(localStorage.getItem("items"));
+  return (
+    itemsFromLocalStorage.filter((i) => i.toLowerCase() === item.toLowerCase())
+      .length !== 0
+  );
+}
+
 function setItemToEdit(item) {
-	isEditMode = true;
+  isEditMode = true;
 
-	itemList.querySelectorAll("li").forEach((i) => i.classList.remove("edit-mode"));
+  itemList
+    .querySelectorAll("li")
+    .forEach((i) => i.classList.remove("edit-mode"));
 
-	item.classList.add("edit-mode");
-	formBtn.innerHTML = '<i class ="fa-solid fa-pen"></i> Update Item';
-	formBtn.style.backgroundColor = "#228B22";
-	itemInput.value = item.textContent;
+  item.classList.add("edit-mode");
+  formBtn.innerHTML = '<i class ="fa-solid fa-pen"></i> Update Item';
+  formBtn.style.backgroundColor = "#228B22";
+  itemInput.value = item.textContent;
 }
 
 function removeItem(item) {
-	if (confirm("Are you sure?")) {
-		// Remove item from DOM
-		item.remove();
+  if (confirm("Are you sure?")) {
+    // Remove item from DOM
+    item.remove();
 
-		// Remove item from storage
-		removeItemFromStorage(item.textContent);
-		checkUI();
-	}
+    // Remove item from storage
+    removeItemFromStorage(item.textContent);
+    checkUI();
+  }
 }
 
-function removeItemFromStorage (item) {
-	let itemsFromStorage = getItemsFromStorage();
+function removeItemFromStorage(item) {
+  let itemsFromStorage = getItemsFromStorage();
 
-	// Filter out item to be removed
-	itemsFromStorage = itemsFromStorage.filter((i) => i !== item);
+  // Filter out item to be removed
+  itemsFromStorage = itemsFromStorage.filter((i) => i !== item);
 
-	localStorage.setItem("items", JSON.stringify(itemsFromStorage));
+  localStorage.setItem("items", JSON.stringify(itemsFromStorage));
 }
 
 function clearItems(e) {
-	if(confirm("Are you sure?")){
+  if (confirm("Are you sure?")) {
     while (itemList.firstChild) {
       itemList.removeChild(itemList.firstChild);
     }
@@ -150,7 +179,18 @@ function filterItems(e) {
   });
 }
 
+function onClickCancelEdit(e) {
+  e.preventDefault();
+  cancelBtn.classList.remove("hidden");
+  itemList
+    .querySelectorAll("li")
+    .forEach((i) => i.classList.remove("edit-mode"));
+  checkUI();
+}
+
 function checkUI() {
+  itemInput.value = "";
+
   const items = itemList.querySelectorAll("li");
   if (items.length === 0) {
     clearButton.style.display = "none";
@@ -159,6 +199,13 @@ function checkUI() {
     clearButton.style.display = "block";
     itemFilter.style.display = "block";
   }
+
+  formBtn.innerHTML = '<i class=fa-solid fa-plus"></i> Add Item';
+  formBtn.style.backgroundColor = "#333";
+
+  cancelBtn.classList.add("hidden");
+
+  isEditMode = false;
 }
 
 // Initialize app
@@ -169,6 +216,7 @@ function init() {
   clearButton.addEventListener("click", clearItems);
   itemFilter.addEventListener("input", filterItems);
   document.addEventListener("DOMContentLoaded", displayItems);
+  cancelBtn.addEventListener("click", onClickCancelEdit);
 
   checkUI(); // Al cargar la página lo comprobamos
 }
